@@ -1,6 +1,7 @@
 import csv
 import itertools
 import sys
+import math
 
 PROBS = {
 
@@ -128,6 +129,23 @@ def powerset(s):
     ]
 
 
+# helpers
+def how_many_genes(person, one_gene, two_genes):
+    if (person in one_gene):
+        return 1
+    elif (person in two_genes):
+        return 2
+    else:
+        return 0
+
+def has_trait(person, have_trait):
+    if (person in have_trait):
+        return True
+    else:
+        return False
+
+
+# ai logic
 def joint_probability(people, one_gene, two_genes, have_trait):
     """
     Compute and return a joint probability.
@@ -139,7 +157,48 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
-    raise NotImplementedError
+
+    # storing all probabilities
+    probabilities = list()
+
+    # loop through people, calculate and add probabilities to set
+    for person in people:
+        genes = how_many_genes(person, one_gene, two_genes) # {0, 1, 2}
+        trait = has_trait(person, have_trait) # {True, False}
+        mother = people[person]['mother']
+
+        if mother:
+            mother_genes = how_many_genes(mother, one_gene, two_genes)
+            father = people[person]['father']
+            father_genes = how_many_genes(father, one_gene, two_genes)
+
+            def prob_gene_from_parent(parent_genes):
+                if parent_genes == 0:
+                    return 0.01
+                elif parent_genes == 1:
+                    return 0.5
+                else:
+                    return 0.99
+
+            p_g_from_m = prob_gene_from_parent(mother_genes)
+            p_g_from_f = prob_gene_from_parent(father_genes)
+            if genes == 0:
+                gene_prob = (1 - p_g_from_m) * (1 - p_g_from_f)
+            elif genes == 1:
+                gene_prob = (p_g_from_m * (1 - p_g_from_f)) + ((1 - p_g_from_m) * p_g_from_f)
+            else:
+                gene_prob = p_g_from_m * p_g_from_f
+
+            trait_prob = PROBS['trait'][genes][trait]
+
+            probabilities.append(gene_prob * trait_prob)
+        else:
+            gene_prob = PROBS['gene'][genes]
+            trait_prob = PROBS['trait'][genes][trait]
+            probabilities.append(gene_prob * trait_prob)
+
+    # calculate joint probability
+    return math.prod(probabilities)
 
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
@@ -149,7 +208,12 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
-    raise NotImplementedError
+    for person in probabilities:
+        genes = how_many_genes(person, one_gene, two_genes)
+        probabilities[person]['gene'][genes] += p
+
+        trait = has_trait(person, have_trait)
+        probabilities[person]['trait'][trait] += p
 
 
 def normalize(probabilities):
@@ -157,7 +221,22 @@ def normalize(probabilities):
     Update `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
-    raise NotImplementedError
+    for person in probabilities:
+        # normalize gene
+        prob_0 = probabilities[person]['gene'][0]
+        prob_1 = probabilities[person]['gene'][1]
+        prob_2 = probabilities[person]['gene'][2]
+        prob_total = prob_0 + prob_1 + prob_2
+        probabilities[person]['gene'][0] = prob_0 / prob_total
+        probabilities[person]['gene'][1] = prob_1 / prob_total
+        probabilities[person]['gene'][2] = prob_2 / prob_total
+
+        # normalize trait
+        prob_true = probabilities[person]['trait'][True]
+        prob_false = probabilities[person]['trait'][False]
+        prob_total_bool = prob_true + prob_false
+        probabilities[person]['trait'][True] = prob_true / prob_total_bool
+        probabilities[person]['trait'][False] = prob_false / prob_total_bool
 
 
 if __name__ == "__main__":
