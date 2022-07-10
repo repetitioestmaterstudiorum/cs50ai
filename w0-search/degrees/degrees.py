@@ -1,8 +1,7 @@
 import csv
-from gettext import find
 import sys
 
-from util import Node, StackFrontier, QueueFrontier
+from util import Node, QueueFrontier
 
 # Maps names to a set of corresponding person_ids
 names = {}
@@ -28,7 +27,7 @@ def load_data(directory):
                 "movies": set()
             }
             if row["name"].lower() not in names:
-                names[row["name"].lower()] = {row["id"]}
+                names[row["name"].lower()] = {row["id"]} # this creates a set because of {}
             else:
                 names[row["name"].lower()].add(row["id"])
 
@@ -55,7 +54,7 @@ def load_data(directory):
 
 def main():
     if len(sys.argv) > 2:
-        sys.exit("Usage: python degrees.py [directory]")
+        sys.exit("Usage: python degrees.py [directory?]")
     directory = sys.argv[1] if len(sys.argv) == 2 else "large"
 
     # Load data from files into memory
@@ -114,7 +113,7 @@ def shortest_path(source, target):
         if frontier.empty():
             raise Exception("no solution")
 
-        # get first queue item and it's stat's person_id
+        # get next queue item and it's star's person_id
         starbud = frontier.remove()
         starbud_person_id = starbud.state[1]
 
@@ -127,9 +126,9 @@ def shortest_path(source, target):
             path.reverse()
             return path
 
-        # get next neighbors and add to queue
-        neighbors = neighbors_for_person(starbud_person_id)
-        for neighbor in neighbors:
+        # get next queue item's (from above) neighbors 
+        next_neighbors = neighbors_for_person(starbud_person_id)
+        for neighbor in next_neighbors:
             person_id = neighbor[1]
             if person_id in explored_person_ids:
                 continue

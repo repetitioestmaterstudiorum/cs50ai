@@ -4,6 +4,7 @@ class Node():
         self.parent = parent
 
 
+# could be used direclty without QueueFrontier below for DFS
 class StackFrontier():
     def __init__(self):
         self.frontier = []
@@ -26,6 +27,7 @@ class StackFrontier():
             return node
 
 
+# BFS, based on StackFrontier above but different pull/remove mechanism
 class QueueFrontier(StackFrontier):
     def remove(self):
         if self.empty():

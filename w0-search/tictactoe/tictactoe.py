@@ -49,7 +49,7 @@ def result(board, action):
     """
     Returns the board that results from making move (i, j) on the board.
     """
-    p = player(board) # determind current player
+    p = player(board) # determine the current player
     new_b = copy.deepcopy(board)
     new_b[action[0]][action[1]] = p
     return new_b
@@ -89,7 +89,6 @@ def utility(board):
         return 0
 
 
-# an article that helped me understand the minimax algorithm: https://www.cosy.sbg.ac.at/~held/teaching/wiss_arbeiten/slides_19-20/KI_in_Videospielen.pdf
 def minimax(board):
     """
     Returns the optimal action for the current player on the board.
@@ -134,19 +133,6 @@ def minimax(board):
     return optimal_action
 
 
-# helpers
-class Memoize:
-    # source of this class: https://python-course.eu/advanced-python/memoization-decorators.php
-    def __init__(self, fn):
-        self.fn = fn
-        self.memo = {}
-    def __call__(self, *args):
-        if args not in self.memo:
-            self.memo[args] = self.fn(*args)
-        return self.memo[args]
-
-
-@Memoize # find_winner() is called often (by winner()), and it's not a cheap function
 def find_winner(board_str):
     # pattern match to find winner
     ## winning patterns
