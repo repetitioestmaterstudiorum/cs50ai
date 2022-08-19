@@ -99,6 +99,12 @@ class CrosswordCreator():
         if not is_problem_solvable:
             return None # don't even try to backtrack if the problem is unsolvable
 
+        # self.assignment_complete() and self.consistent() methods test
+        assignment = dict((var, str(words)) for var, words in self.domains.items())
+        log and print(f"assignment: {assignment}")
+        log and print(f"self.assignment_complete(assignment): {self.assignment_complete(assignment)}")
+        log and print(f"self.consistent(assignment): {self.consistent(assignment)}")
+
         return self.backtrack(dict())
 
     def enforce_node_consistency(self):
@@ -180,7 +186,8 @@ class CrosswordCreator():
         Return True if `assignment` is complete (i.e., assigns a value to each
         crossword variable); return False otherwise.
         """
-        return all(len(words) == 1 for words in assignment.values())
+        # return all(len(words) == 1 for words in assignment.values()) # stricter check
+        return all(bool(word_or_words) for word_or_words in assignment.values())
 
     def consistent(self, assignment):
         """
