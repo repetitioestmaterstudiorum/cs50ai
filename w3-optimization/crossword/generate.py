@@ -89,8 +89,16 @@ class CrosswordCreator():
         """
         Enforce node and arc consistency, and then solve the CSP.
         """
+        log = True
+
         self.enforce_node_consistency()
-        self.ac3()
+
+        log and print(f"ac3(): domains BEFORE:', {self.domains}\n")
+        is_problem_solvable = self.ac3()
+        log and print(f"ac3(): domains AFTER:', {self.domains}\nis_problem_solvable: {is_problem_solvable}\n")
+        if not is_problem_solvable:
+            return None # don't even try to backtrack if the problem is unsolvable
+
         return self.backtrack(dict())
 
     def enforce_node_consistency(self):
@@ -99,10 +107,10 @@ class CrosswordCreator():
         (Remove any values that are inconsistent with a variable's unary
          constraints; in this case, the length of the word.)
         """
-        for domain, words in self.domains.items():
+        for variable, words in self.domains.items():
             for word in words.copy():
-                if len(word) is not domain.length:
-                    self.domains[domain].remove(word)
+                if len(word) is not variable.length:
+                    self.domains[variable].remove(word)
 
     def revise(self, x, y):
         """
@@ -113,7 +121,25 @@ class CrosswordCreator():
         Return True if a revision was made to the domain of `x`; return
         False if no revision was made.
         """
-        raise NotImplementedError
+        log = False
+        log and print(f"-- revise() x: {x}, y: {y}")
+
+        overlaps = self.crossword.overlaps[x, y] # e.g. (0, 1)
+        x_words = self.domains[x]
+        y_words = self.domains[y]
+        y_words_overlap_chars = set([y_word[overlaps[1]] for y_word in y_words])
+        log and print(f"y_words_overlap_chars: {y_words_overlap_chars}")
+
+        x_words_changed = False
+        for x_word in x_words.copy():
+            x_word_overlap_char = x_word[overlaps[0]]
+            log and print(f"{x_word_overlap_char} in y_words_overlap_chars: {x_word_overlap_char in y_words_overlap_chars}")
+            if x_word_overlap_char not in y_words_overlap_chars:
+                self.domains[x].remove(x_word)
+                x_words_changed = True
+
+        log and print(f"-- x_words_changed: {x_words_changed}\n")
+        return x_words_changed
 
     def ac3(self, arcs=None):
         """
@@ -124,14 +150,37 @@ class CrosswordCreator():
         Return True if arc consistency is enforced and no domains are empty;
         return False if one or more domains end up empty.
         """
-        raise NotImplementedError
+        log = False
+
+        queue = arcs or self.domains.keys()
+        log and print(f"ac3(): queue (arcs: {bool(arcs)}):", queue)
+
+        for variable in queue:
+            log and print(f"ac3(): variable:', {variable}")
+            neighbors = self.crossword.neighbors(variable)
+            log and print(f"ac3(): neighbors:', {neighbors}\n")
+
+            variable_domain_words = self.domains.get(variable)
+            for n in neighbors:
+                x_words_changed = self.revise(variable, n)
+                
+                # if the variable has no words left in its domain, the problem is unsolvable
+                variable_has_words_left = bool(variable_domain_words)
+                if not variable_has_words_left:
+                    return False
+
+                # call this function again with all the changed variable's neighbors if the words of the variable's domain changed
+                if x_words_changed: 
+                    self.ac3(neighbors)
+        
+        return True
 
     def assignment_complete(self, assignment):
         """
         Return True if `assignment` is complete (i.e., assigns a value to each
         crossword variable); return False otherwise.
         """
-        raise NotImplementedError
+        return all(len(words) == 1 for words in assignment.values())
 
     def consistent(self, assignment):
         """
