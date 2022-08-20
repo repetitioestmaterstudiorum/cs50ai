@@ -89,7 +89,7 @@ class CrosswordCreator():
         """
         Enforce node and arc consistency, and then solve the CSP.
         """
-        log = True
+        log = False
 
         self.enforce_node_consistency()
 
@@ -100,10 +100,9 @@ class CrosswordCreator():
             return None # don't even try to backtrack if the problem is unsolvable
 
         # self.assignment_complete() and self.consistent() methods test
-        assignment = dict((var, str(words)) for var, words in self.domains.items())
-        log and print(f"assignment: {assignment}")
-        log and print(f"self.assignment_complete(assignment): {self.assignment_complete(assignment)}")
-        log and print(f"self.consistent(assignment): {self.consistent(assignment)}")
+        log and print(f"self.assignment_complete(assignment): {self.assignment_complete(self.domains)}")
+        log and print(f"self.consistent(assignment): {self.consistent(self.domains)}")
+        print(f"self.consistent(assignment): {self.consistent(self.domains)}")
 
         return self.backtrack(dict())
 
@@ -186,7 +185,7 @@ class CrosswordCreator():
         Return True if `assignment` is complete (i.e., assigns a value to each
         crossword variable); return False otherwise.
         """
-        # return all(len(words) == 1 for words in assignment.values()) # stricter check
+        # return all(len(words) == 1 for words in assignment.values()) # stricter check (each variable has exactly one word assigned to it)
         return all(bool(word_or_words) for word_or_words in assignment.values())
 
     def consistent(self, assignment):
@@ -194,7 +193,46 @@ class CrosswordCreator():
         Return True if `assignment` is consistent (i.e., words fit in crossword
         puzzle without conflicting characters); return False otherwise.
         """
-        raise NotImplementedError
+        log = False
+
+        assignment_vars = set()
+
+        for var, word_or_words in assignment.items():
+            log and print(f"var: {var}, word_or_words: {word_or_words}")
+
+            log and print(f"len(word_or_words): {len(word_or_words)}, type(word_or_words): {type(word_or_words)}")
+            # check if there is just one word assigned per variable
+            if len(word_or_words) == 1:
+                word = list(word_or_words)[0]
+                log and print(f"word: {word}")
+            else:
+                return False
+
+            # check if the word is unique (used just once in the assignment)
+            if word in assignment_vars:
+                return False
+            else:
+                assignment_vars.add(word)
+
+            # ensure if the word has the correct length
+            if len(word) is not var.length:
+                return False
+            
+            # ensure there are no conflicts with neighboring variables
+            for neighbor in self.crossword.neighbors(var):
+                i, j = self.crossword.overlaps[var, neighbor]
+                log and print(f"neighbor: {neighbor}, i: {i}, j: {j}")
+                neighbor_word = list(assignment[neighbor])[0]
+                log and print(f"neighbor_word: {neighbor_word}, word[i]: {word[i]}, neighbor_word[j]: {neighbor_word[j]}")
+                if word[i] is not neighbor_word[j]:
+                    return False
+
+        # make sure all vars are present
+        if not all(var in assignment_vars for var in self.domains.keys()):
+            return False
+
+        # otherwise, all checks have passed and the assignment is consistent
+        return True
 
     def order_domain_values(self, var, assignment):
         """
@@ -203,7 +241,7 @@ class CrosswordCreator():
         The first value in the list, for example, should be the one
         that rules out the fewest values among the neighbors of `var`.
         """
-        raise NotImplementedError
+        print('order_domain_values()')
 
     def select_unassigned_variable(self, assignment):
         """
@@ -213,7 +251,7 @@ class CrosswordCreator():
         degree. If there is a tie, any of the tied variables are acceptable
         return values.
         """
-        raise NotImplementedError
+        print('select_unassigned_variable()')
 
     def backtrack(self, assignment):
         """
@@ -224,7 +262,7 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
-        raise NotImplementedError
+        print('backtrack()')
 
 
 def main():
