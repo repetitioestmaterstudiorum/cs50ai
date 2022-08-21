@@ -97,8 +97,9 @@ class CrosswordCreator():
         # solve() logic
         self.enforce_node_consistency()
 
-        # self.order_domain_values() method dev test
+        # order_domain_values() and select_unassigned_variable() method dev test
         self.my_print(log, f"self.order_domain_values(): {self.order_domain_values(list(self.domains.keys())[random.randint(3,len(self.domains) - 1)], dict((k, v) for k, v in list(self.domains.items())[0:3]))}")
+        self.my_print(log, f"self.select_unassigned_variable(): {self.select_unassigned_variable(dict((k, v) for k, v in list(self.domains.items())[0:3]))}")
 
         # solve() logic
         self.my_print(log, f"ac3(): domains BEFORE:', {self.domains}")
@@ -107,7 +108,7 @@ class CrosswordCreator():
         if not is_problem_solvable:
             return None # don't try to backtrack if the problem is unsolvable
 
-        # self.assignment_complete() and self.consistent() methods dev test
+        # assignment_complete() and consistent() methods dev test
         self.my_print(log, f"self.assignment_complete(): {self.assignment_complete(self.domains)}")
         self.my_print(log, f"self.consistent(): {self.consistent(self.domains)}")
 
@@ -301,7 +302,23 @@ class CrosswordCreator():
         degree. If there is a tie, any of the tied variables are acceptable
         return values.
         """
-        print('select_unassigned_variable()')
+        log = False
+
+        assignment_vars = set(var for var in list(assignment.keys()))
+        self.my_print(log, f"assignment_vars: {assignment_vars}")
+
+        possible_vars = self.crossword.variables - assignment_vars
+        self.my_print(log, f"possible_vars: {possible_vars}")
+
+        var_dict = dict((var, {
+            'values': self.domains.get(var),
+            'value_count': len(self.domains.get(var)),
+            'neighbor_count': len(self.crossword.neighbors(var))
+        }) for var in possible_vars)
+        self.my_print(log, f"var_dict: {var_dict}")
+
+        return dict((var, data['values']) for var, data in sorted(var_dict.items(), key=(lambda item: (item[1]['value_count'], -item[1]['neighbor_count'])), reverse=False))
+
 
     def backtrack(self, assignment):
         """
