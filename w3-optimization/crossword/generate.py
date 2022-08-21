@@ -1,6 +1,4 @@
-from array import array
 import sys
-import random
 
 from crossword import *
 
@@ -94,25 +92,15 @@ class CrosswordCreator():
         """
         log = False
 
-        # solve() logic
         self.enforce_node_consistency()
 
-        # order_domain_values() and select_unassigned_variable() method dev test
-        self.my_print(log, f"self.order_domain_values(): {self.order_domain_values(list(self.domains.keys())[random.randint(3,len(self.domains) - 1)], dict((k, v) for k, v in list(self.domains.items())[0:3]))}")
-        self.my_print(log, f"self.select_unassigned_variable(): {self.select_unassigned_variable(dict((k, v) for k, v in list(self.domains.items())[0:3]))}")
-
-        # solve() logic
         self.my_print(log, f"ac3(): domains BEFORE:', {self.domains}")
-        is_problem_solvable = self.ac3()
-        self.my_print(log, f"ac3(): domains AFTER:', {self.domains}is_problem_solvable: {is_problem_solvable}")
-        if not is_problem_solvable:
+        is_problem_still_solvable = self.ac3()
+        self.my_print(log, f"ac3(): domains AFTER:', {self.domains}is_problem_still_solvable: {is_problem_still_solvable}")
+        if not is_problem_still_solvable:
             return None # don't try to backtrack if the problem is unsolvable
 
-        # assignment_complete() and consistent() methods dev test
-        self.my_print(log, f"self.assignment_complete(): {self.assignment_complete(self.domains)}")
-        self.my_print(log, f"self.consistent(): {self.consistent(self.domains)}")
-
-        return self.backtrack(dict())
+        return self.backtrack(self.domains)
 
     def enforce_node_consistency(self):
         """
@@ -193,8 +181,8 @@ class CrosswordCreator():
         Return True if `assignment` is complete (i.e., assigns a value to each
         crossword variable); return False otherwise.
         """
-        # return all(len(words) == 1 for words in assignment.values()) # stricter check (each variable has exactly one word assigned to it)
-        return all(bool(word_or_words) for word_or_words in assignment.values())
+        return all(len(words) == 1 for words in assignment.values())
+
 
     def consistent(self, assignment):
         """
@@ -304,20 +292,24 @@ class CrosswordCreator():
         """
         log = False
 
-        assignment_vars = set(var for var in list(assignment.keys()))
-        self.my_print(log, f"assignment_vars: {assignment_vars}")
-
-        possible_vars = self.crossword.variables - assignment_vars
-        self.my_print(log, f"possible_vars: {possible_vars}")
+        unassigned_vars = set(var for var, values in list(assignment.items()) if len(values) != 1)
+        self.my_print(log, f"unassigned_vars: {unassigned_vars}")
 
         var_dict = dict((var, {
-            'values': self.domains.get(var),
-            'value_count': len(self.domains.get(var)),
+            'values': assignment.get(var),
+            'value_count': len(assignment.get(var)),
             'neighbor_count': len(self.crossword.neighbors(var))
-        }) for var in possible_vars)
+        }) for var in unassigned_vars)
         self.my_print(log, f"var_dict: {var_dict}")
 
-        return dict((var, data['values']) for var, data in sorted(var_dict.items(), key=(lambda item: (item[1]['value_count'], -item[1]['neighbor_count'])), reverse=False))
+        # sort with 2 priorities
+        sorted_var_values_dict = dict((var, data['values']) for var, data in sorted(var_dict.items(), key=(lambda item: (item[1]['value_count'], -item[1]['neighbor_count'])), reverse=False))
+        self.my_print(log, f"sorted_var_values_dict: {sorted_var_values_dict}")
+
+        first_key = list(sorted_var_values_dict.keys())[0]
+        self.my_print(log, f"first_key: {first_key}")
+
+        return {first_key: sorted_var_values_dict.get(first_key)}
 
 
     def backtrack(self, assignment):
@@ -329,7 +321,18 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
-        print('backtrack()')
+        log = True
+
+        self.my_print(log, f"assignment: {assignment}")
+
+        # self.my_print(log, f"self.assignment_complete(): {self.assignment_complete(self.domains)}")
+        # self.my_print(log, f"self.consistent(): {self.consistent(self.domains)}")
+        self.my_print(log, f"assignment: {assignment}")
+
+        next_var = self.select_unassigned_variable(assignment)
+        self.my_print(log, f"next_var: {next_var}")
+
+        # order_domain_values(var, assignment)
 
     def my_print(self, log, *args):
         if self.log_all or log:
