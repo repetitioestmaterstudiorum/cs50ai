@@ -1,9 +1,12 @@
+from array import array
 import sys
+import random
 
 from crossword import *
 
-
 class CrosswordCreator():
+
+    log_all = False
 
     def __init__(self, crossword):
         """
@@ -91,18 +94,22 @@ class CrosswordCreator():
         """
         log = False
 
+        # solve() logic
         self.enforce_node_consistency()
 
-        log and print(f"ac3(): domains BEFORE:', {self.domains}\n")
-        is_problem_solvable = self.ac3()
-        log and print(f"ac3(): domains AFTER:', {self.domains}\nis_problem_solvable: {is_problem_solvable}\n")
-        if not is_problem_solvable:
-            return None # don't even try to backtrack if the problem is unsolvable
+        # self.order_domain_values() method dev test
+        self.my_print(log, f"self.order_domain_values(): {self.order_domain_values(list(self.domains.keys())[random.randint(3,len(self.domains) - 1)], dict((k, v) for k, v in list(self.domains.items())[0:3]))}")
 
-        # self.assignment_complete() and self.consistent() methods test
-        log and print(f"self.assignment_complete(assignment): {self.assignment_complete(self.domains)}")
-        log and print(f"self.consistent(assignment): {self.consistent(self.domains)}")
-        print(f"self.consistent(assignment): {self.consistent(self.domains)}")
+        # solve() logic
+        self.my_print(log, f"ac3(): domains BEFORE:', {self.domains}")
+        is_problem_solvable = self.ac3()
+        self.my_print(log, f"ac3(): domains AFTER:', {self.domains}is_problem_solvable: {is_problem_solvable}")
+        if not is_problem_solvable:
+            return None # don't try to backtrack if the problem is unsolvable
+
+        # self.assignment_complete() and self.consistent() methods dev test
+        self.my_print(log, f"self.assignment_complete(): {self.assignment_complete(self.domains)}")
+        self.my_print(log, f"self.consistent(): {self.consistent(self.domains)}")
 
         return self.backtrack(dict())
 
@@ -127,23 +134,23 @@ class CrosswordCreator():
         False if no revision was made.
         """
         log = False
-        log and print(f"-- revise() x: {x}, y: {y}")
+        self.my_print(log, f"-- revise() x: {x}, y: {y}")
 
-        overlaps = self.crossword.overlaps[x, y] # e.g. (0, 1)
+        i, j = self.crossword.overlaps[x, y] # e.g. (0, 1)
         x_words = self.domains[x]
         y_words = self.domains[y]
-        y_words_overlap_chars = set([y_word[overlaps[1]] for y_word in y_words])
-        log and print(f"y_words_overlap_chars: {y_words_overlap_chars}")
+        y_words_overlap_chars = set([y_word[j] for y_word in y_words])
+        self.my_print(log, f"y_words_overlap_chars: {y_words_overlap_chars}")
 
         x_words_changed = False
         for x_word in x_words.copy():
-            x_word_overlap_char = x_word[overlaps[0]]
-            log and print(f"{x_word_overlap_char} in y_words_overlap_chars: {x_word_overlap_char in y_words_overlap_chars}")
+            x_word_overlap_char = x_word[i]
+            self.my_print(log, f"{x_word_overlap_char} in y_words_overlap_chars: {x_word_overlap_char in y_words_overlap_chars}")
             if x_word_overlap_char not in y_words_overlap_chars:
                 self.domains[x].remove(x_word)
                 x_words_changed = True
 
-        log and print(f"-- x_words_changed: {x_words_changed}\n")
+        self.my_print(log, f"-- x_words_changed: {x_words_changed}")
         return x_words_changed
 
     def ac3(self, arcs=None):
@@ -158,12 +165,12 @@ class CrosswordCreator():
         log = False
 
         queue = arcs or self.domains.keys()
-        log and print(f"ac3(): queue (arcs: {bool(arcs)}):", queue)
+        self.my_print(log, f"ac3(): queue (arcs: {bool(arcs)}):", queue)
 
         for variable in queue:
-            log and print(f"ac3(): variable:', {variable}")
+            self.my_print(log, f"ac3(): variable:', {variable}")
             neighbors = self.crossword.neighbors(variable)
-            log and print(f"ac3(): neighbors:', {neighbors}\n")
+            self.my_print(log, f"ac3(): neighbors:', {neighbors}")
 
             variable_domain_words = self.domains.get(variable)
             for n in neighbors:
@@ -198,13 +205,13 @@ class CrosswordCreator():
         assignment_vars = set()
 
         for var, word_or_words in assignment.items():
-            log and print(f"var: {var}, word_or_words: {word_or_words}")
+            self.my_print(log, f"var: {var}, word_or_words: {word_or_words}")
 
-            log and print(f"len(word_or_words): {len(word_or_words)}, type(word_or_words): {type(word_or_words)}")
+            self.my_print(log, f"len(word_or_words): {len(word_or_words)}, type(word_or_words): {type(word_or_words)}")
             # check if there is just one word assigned per variable
             if len(word_or_words) == 1:
                 word = list(word_or_words)[0]
-                log and print(f"word: {word}")
+                self.my_print(log, f"word: {word}")
             else:
                 return False
 
@@ -220,16 +227,12 @@ class CrosswordCreator():
             
             # ensure there are no conflicts with neighboring variables
             for neighbor in self.crossword.neighbors(var):
-                i, j = self.crossword.overlaps[var, neighbor]
-                log and print(f"neighbor: {neighbor}, i: {i}, j: {j}")
+                i, j = self.crossword.overlaps[var, neighbor] # e.g. (0, 1)
+                self.my_print(log, f"neighbor: {neighbor}, i: {i}, j: {j}")
                 neighbor_word = list(assignment[neighbor])[0]
-                log and print(f"neighbor_word: {neighbor_word}, word[i]: {word[i]}, neighbor_word[j]: {neighbor_word[j]}")
+                self.my_print(log, f"neighbor_word: {neighbor_word}, word[i]: {word[i]}, neighbor_word[j]: {neighbor_word[j]}")
                 if word[i] is not neighbor_word[j]:
                     return False
-
-        # make sure all vars are present
-        if not all(var in assignment_vars for var in self.domains.keys()):
-            return False
 
         # otherwise, all checks have passed and the assignment is consistent
         return True
@@ -241,7 +244,54 @@ class CrosswordCreator():
         The first value in the list, for example, should be the one
         that rules out the fewest values among the neighbors of `var`.
         """
-        print('order_domain_values()')
+        log = False
+
+        # get already assigned values in assignment
+        # double list comprehension: [item for sublist in list for item in sublist]
+        assignment_values = set(value for values in list(assignment.values()) for value in values)
+        self.my_print(log, f"assignment_values: {assignment_values}")
+
+        # get 
+        self.my_print(log, f"var: {var}")
+        var_values = self.domains[var] # words in that var's domain
+        self.my_print(log, f"var_values: {var_values}")
+
+        # var values - assignment values = possible values for var
+        possible_values = var_values - assignment_values
+        if len(possible_values) == 0:
+            possible_values = var_values # this should probably not occur
+        self.my_print(log, f"possible_values: {possible_values}")
+
+        possible_values_rating = dict((value, 0) for value in possible_values)
+        self.my_print(log, f"possible_values_rating: {possible_values_rating}")
+
+        neighbor_vars = set(neighbor for neighbor in self.crossword.neighbors(var))
+        self.my_print(log, f"neighbor_vars: {neighbor_vars}")
+        assignment_vars = set(var for var in list(assignment.keys()))
+        self.my_print(log, f"assignment_vars: {assignment_vars}")
+        unassigned_neighbor_vars = neighbor_vars - assignment_vars
+        if len(unassigned_neighbor_vars) == 0:
+            unassigned_neighbor_vars = neighbor_vars # this should probably not occur
+        self.my_print(log, f"unassigned_neighbor_vars: {unassigned_neighbor_vars}")
+
+        for neighbor_var in unassigned_neighbor_vars:
+            self.my_print(log, f"neighbor_var: {neighbor_var}")
+            neighbor_values = self.domains[neighbor_var]
+            self.my_print(log, f"neighbor_values: {neighbor_values}")
+
+            i, j = self.crossword.overlaps[var, neighbor_var] # e.g. (0, 1)
+            self.my_print(log, f"var inded i: {i}, neighbor var index j: {j}")
+
+            for neighbor_value in neighbor_values:
+                self.my_print(log, f"neighbor_value: {neighbor_value}")
+                for possible_value in possible_values:
+                    self.my_print(log, f"possible_value: {possible_value}")
+                    if possible_value[i] is neighbor_value[j]:
+                        possible_values_rating[possible_value] += 1
+
+        self.my_print(log, f"possible_values_rating: {possible_values_rating}")
+        return list(word[0] for word in sorted(possible_values_rating.items(), key=(lambda value: value[1]), reverse=True))
+
 
     def select_unassigned_variable(self, assignment):
         """
@@ -263,6 +313,11 @@ class CrosswordCreator():
         If no assignment is possible, return None.
         """
         print('backtrack()')
+
+    def my_print(self, log, *args):
+        if self.log_all or log:
+            [print(arg) for arg in args]
+            print('')
 
 
 def main():
