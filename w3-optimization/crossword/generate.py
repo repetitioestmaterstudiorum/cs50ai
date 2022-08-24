@@ -235,51 +235,59 @@ class CrosswordCreator():
         """
         log = False
 
-        # get already assigned values in assignment
-        # double list comprehension: [item for sublist in list for item in sublist]
-        assignment_values = set(value for values in list(assignment.values()) for value in values)
-        self.my_print(log, f"assignment_values: {assignment_values}")
-
-        # get 
         self.my_print(log, f"var: {var}")
-        var_values = self.domains[var] # words in that var's domain
+
+        # get variable key and value
+        var_key = list(var.keys())[0]
+        var_values = var.get(var_key)
+        self.my_print(log, f"var_key: {var_key}")
         self.my_print(log, f"var_values: {var_values}")
 
-        # var values - assignment values = possible values for var
-        possible_values = var_values - assignment_values
-        if len(possible_values) == 0:
-            possible_values = var_values # this should probably not occur
-        self.my_print(log, f"possible_values: {possible_values}")
+        # get already assigned words in assignment (only vars with exactly 1 word)
+        # double list comprehension: [item for sublist in list for item in sublist]
+        assigned_words = set(word for words in list(assignment.values()) for word in words if len(words) == 1)
+        self.my_print(log, f"assigned_words: {assigned_words}")
 
-        possible_values_rating = dict((value, 0) for value in possible_values)
-        self.my_print(log, f"possible_values_rating: {possible_values_rating}")
+        values_rating = dict((value, 0) for value in var_values)
+        self.my_print(log, f"values_rating: {values_rating}")
 
-        neighbor_vars = set(neighbor for neighbor in self.crossword.neighbors(var))
+        neighbor_vars = set(neighbor for neighbor in self.crossword.neighbors(var_key))
         self.my_print(log, f"neighbor_vars: {neighbor_vars}")
+
         assignment_vars = set(var for var in list(assignment.keys()))
         self.my_print(log, f"assignment_vars: {assignment_vars}")
+
         unassigned_neighbor_vars = neighbor_vars - assignment_vars
         if len(unassigned_neighbor_vars) == 0:
-            unassigned_neighbor_vars = neighbor_vars # this should probably not occur
+            unassigned_neighbor_vars = neighbor_vars # this *should* not occur
         self.my_print(log, f"unassigned_neighbor_vars: {unassigned_neighbor_vars}")
 
         for neighbor_var in unassigned_neighbor_vars:
             self.my_print(log, f"neighbor_var: {neighbor_var}")
+
             neighbor_values = self.domains[neighbor_var]
             self.my_print(log, f"neighbor_values: {neighbor_values}")
 
-            i, j = self.crossword.overlaps[var, neighbor_var] # e.g. (0, 1)
-            self.my_print(log, f"var inded i: {i}, neighbor var index j: {j}")
+            i, j = self.crossword.overlaps[var_key, neighbor_var] # e.g. (0, 1)
+            self.my_print(log, f"var_key index i: {i}, neighbor_var index j: {j}")
 
             for neighbor_value in neighbor_values:
                 self.my_print(log, f"neighbor_value: {neighbor_value}")
-                for possible_value in possible_values:
-                    self.my_print(log, f"possible_value: {possible_value}")
-                    if possible_value[i] is neighbor_value[j]:
-                        possible_values_rating[possible_value] += 1
 
-        self.my_print(log, f"possible_values_rating: {possible_values_rating}")
-        return list(word[0] for word in sorted(possible_values_rating.items(), key=(lambda value: value[1]), reverse=True))
+                # don't count neighvor_value if it is assigned to some var already
+                if neighbor_value in assigned_words:
+                    continue
+
+                for value in var_values:
+                    self.my_print(log, f"value: {value}")
+
+                    if value[i] is neighbor_value[j]:
+                        values_rating[value] += 1
+
+        self.my_print(log, f"values_rating: {values_rating}")
+
+        # return the values of var as list ordered by least constraining
+        return list(word[0] for word in sorted(values_rating.items(), key=(lambda value: value[1]), reverse=True))
 
 
     def select_unassigned_variable(self, assignment):
@@ -303,13 +311,13 @@ class CrosswordCreator():
         self.my_print(log, f"var_dict: {var_dict}")
 
         # sort with 2 priorities
-        sorted_var_values_dict = dict((var, data['values']) for var, data in sorted(var_dict.items(), key=(lambda item: (item[1]['value_count'], -item[1]['neighbor_count'])), reverse=False))
-        self.my_print(log, f"sorted_var_values_dict: {sorted_var_values_dict}")
+        sorted_var_v_dict = dict((var, data['values']) for var, data in sorted(var_dict.items(), key=(lambda item: (item[1]['value_count'], -item[1]['neighbor_count'])), reverse=False))
+        self.my_print(log, f"sorted_var_v_dict: {sorted_var_v_dict}")
 
-        first_key = list(sorted_var_values_dict.keys())[0]
+        first_key = list(sorted_var_v_dict.keys())[0]
         self.my_print(log, f"first_key: {first_key}")
 
-        return {first_key: sorted_var_values_dict.get(first_key)}
+        return {first_key: sorted_var_v_dict.get(first_key)}
 
 
     def backtrack(self, assignment):
@@ -325,14 +333,25 @@ class CrosswordCreator():
 
         self.my_print(log, f"assignment: {assignment}")
 
-        # self.my_print(log, f"self.assignment_complete(): {self.assignment_complete(self.domains)}")
-        # self.my_print(log, f"self.consistent(): {self.consistent(self.domains)}")
-        self.my_print(log, f"assignment: {assignment}")
+        # while not complete, get and assign next var
+        # get next unassigned variable
+        # order that variable domain's values (words)
+        # assign first word to variable, record choice, move on to next variable
+        # if there's a conflict, backtrack
+        # if consistent return solution, else False (no solution)
+
+        is_assignment_complete = self.assignment_complete(assignment)
+        self.my_print(log, f"is_assignment_complete: {is_assignment_complete}")
 
         next_var = self.select_unassigned_variable(assignment)
         self.my_print(log, f"next_var: {next_var}")
 
-        # order_domain_values(var, assignment)
+        next_var_values_order = self.order_domain_values(next_var, assignment)
+        self.my_print(log, f"next_var_values_order: {next_var_values_order}")
+
+        is_assignment_consistent = self.consistent(assignment)
+        self.my_print(log, f"is_assignment_consistent: {is_assignment_consistent}")
+
 
     def my_print(self, log, *args):
         if self.log_all or log:
