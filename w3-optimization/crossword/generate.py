@@ -1,3 +1,4 @@
+from copy import deepcopy
 import sys
 
 from crossword import *
@@ -191,18 +192,19 @@ class CrosswordCreator():
         """
         log = False
 
+        self.my_print(log, f"assignment: {assignment}")
+
         assignment_vars = set()
 
         for var, word_or_words in assignment.items():
-            self.my_print(log, f"var: {var}, word_or_words: {word_or_words}")
+            self.my_print(log, f"var: {var}, word_or_words: {word_or_words}")    
 
-            self.my_print(log, f"len(word_or_words): {len(word_or_words)}, type(word_or_words): {type(word_or_words)}")
-            # check if there is just one word assigned per variable
+            # check only variables with exactly one assigned value (word)
+            self.my_print(log, f"len(word_or_words): {len(word_or_words)}")
             if len(word_or_words) == 1:
                 word = list(word_or_words)[0]
-                self.my_print(log, f"word: {word}")
             else:
-                return False
+                continue # skip this loop iteration
 
             # check if the word is unique (used just once in the assignment)
             if word in assignment_vars:
@@ -216,10 +218,18 @@ class CrosswordCreator():
             
             # ensure there are no conflicts with neighboring variables
             for neighbor in self.crossword.neighbors(var):
+                self.my_print(log, f"neighbor: {neighbor}")
+
                 i, j = self.crossword.overlaps[var, neighbor] # e.g. (0, 1)
-                self.my_print(log, f"neighbor: {neighbor}, i: {i}, j: {j}")
+                self.my_print(log, f"self.crossword.overlaps[var, neighbor]: i: {i}, j: {j}")
+
+                self.my_print(log, f"word[i]: {word[i]}")
+
                 neighbor_word = list(assignment[neighbor])[0]
-                self.my_print(log, f"neighbor_word: {neighbor_word}, word[i]: {word[i]}, neighbor_word[j]: {neighbor_word[j]}")
+                self.my_print(log, f"neighbor_word: {neighbor_word}")
+
+                self.my_print(log, f"neighbor_word[j]: {neighbor_word[j]}")
+
                 if word[i] is not neighbor_word[j]:
                     return False
 
@@ -287,7 +297,7 @@ class CrosswordCreator():
         self.my_print(log, f"values_rating: {values_rating}")
 
         # return the values of var as list ordered by least constraining
-        return list(word[0] for word in sorted(values_rating.items(), key=(lambda value: value[1]), reverse=True))
+        return list(values[0] for values in sorted(values_rating.items(), key=(lambda value_rating: value_rating[1]), reverse=True))
 
 
     def select_unassigned_variable(self, assignment):
@@ -329,28 +339,44 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
-        log = True
+        log = False
 
         self.my_print(log, f"assignment: {assignment}")
-
-        # while not complete, get and assign next var
-        # get next unassigned variable
-        # order that variable domain's values (words)
-        # assign first word to variable, record choice, move on to next variable
-        # if there's a conflict, backtrack
-        # if consistent return solution, else False (no solution)
-
+        
         is_assignment_complete = self.assignment_complete(assignment)
         self.my_print(log, f"is_assignment_complete: {is_assignment_complete}")
+        if is_assignment_complete:
+            return {var: list(value_set)[0] for var, value_set in list(assignment.items())}
 
         next_var = self.select_unassigned_variable(assignment)
         self.my_print(log, f"next_var: {next_var}")
 
+        next_var_key = list(next_var)[0]
+        next_var_values = next_var[next_var_key]
+        self.my_print(log, f"next_var_key: {next_var_key}, next_var_values: {next_var_values}")
+
         next_var_values_order = self.order_domain_values(next_var, assignment)
         self.my_print(log, f"next_var_values_order: {next_var_values_order}")
 
-        is_assignment_consistent = self.consistent(assignment)
-        self.my_print(log, f"is_assignment_consistent: {is_assignment_consistent}")
+        for value in next_var_values_order:
+            self.my_print(log, f"value: {value}")
+
+            # try next value
+            assignment_copy = deepcopy(assignment)
+            self.my_print(log, f"assignment_copy: {assignment_copy}")
+            assignment_copy[next_var_key] = {value}
+
+            is_assignment_consistent = self.consistent(assignment_copy)
+            self.my_print(log, f"is_assignment_consistent: {is_assignment_consistent}")
+
+            if is_assignment_consistent:
+                result = self.backtrack(assignment_copy)
+                if result:
+                    return result
+
+            # if the assignment isn't consistent with the next tried value, remove it and recurse
+            assignment[next_var_key].remove(value)
+            return self.backtrack(assignment_copy)
 
 
     def my_print(self, log, *args):
