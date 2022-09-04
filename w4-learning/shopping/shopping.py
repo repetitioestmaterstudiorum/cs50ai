@@ -15,6 +15,7 @@ def main():
 
     # Load data from spreadsheet and split into train and test sets
     evidence, labels = load_data(sys.argv[1])
+    print('evidence', evidence, 'labels', labels)
     X_train, X_test, y_train, y_test = train_test_split(
         evidence, labels, test_size=TEST_SIZE
     )
@@ -59,7 +60,21 @@ def load_data(filename):
     labels should be the corresponding list of labels, where each label
     is 1 if Revenue is true, and 0 otherwise.
     """
-    raise NotImplementedError
+    with open(filename) as f:
+        reader = csv.reader(f)
+        next(reader)
+
+        evidence = []
+        labels = []
+        row_num = 1 # todo remove
+        for row in reader:
+            if row_num > 10: # todo remove
+                break # todo remove
+            evidence.append(get_evidence_values(row[:17]))
+            labels.append(1 if row[17] == "TRUE" else 0)
+            row_num += 1 # todo remove
+    
+        return (evidence, labels)
 
 
 def train_model(evidence, labels):
@@ -88,5 +103,53 @@ def evaluate(labels, predictions):
     raise NotImplementedError
 
 
+# helpers
+def get_evidence_values(evidence):
+    # print('--- evidence', evidence)
+    i = 0
+    evidence_values = []
+    for cell in evidence:
+        # string to int
+        if i in [0, 2, 4, 11, 12, 13, 14]:
+            evidence_values.append(int(cell))
+        # string to float
+        elif i in [1, 3, 5, 6, 7, 8, 9]:
+            evidence_values.append(float(cell))
+        # month to 0-11
+        elif i == 10:
+            evidence_values.append(get_month_as_number(cell))
+        # visitor type to 1/0
+        elif i == 15:
+            evidence_values.append(1 if cell == 'Returning_Visitor' else 0)
+        # weekend to 1/0
+        elif i == 16:
+            evidence_values.append(1 if cell == 'TRUE' else 0)
+        else:
+            IndexError(f"did not expect i of {i}")
+        i += 1
+
+    # print('evidence_values', evidence_values, '\n')
+    return evidence_values
+
+
+def get_month_as_number(month):
+    month_to_number_dict = {
+        'Jan': 0,
+        'Feb': 1,
+        'Mar': 2,
+        'Apr': 3,
+        'May': 4,
+        'Jun': 5,
+        'Jul': 6,
+        'Aug': 7,
+        'Sep': 8,
+        'Oct': 9,
+        'Nov': 10,
+        'Dec': 11,
+    }
+    return month_to_number_dict[month]
+
+
+# not a helper :)
 if __name__ == "__main__":
     main()
