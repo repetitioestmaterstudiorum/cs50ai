@@ -4,8 +4,12 @@ import sys
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 
-TEST_SIZE = 0.4
 
+###
+# Supervised learning exercise
+###
+
+TEST_SIZE = 0.4
 
 def main():
 
@@ -15,19 +19,18 @@ def main():
 
     # Load data from spreadsheet and split into train and test sets
     evidence, labels = load_data(sys.argv[1])
-    print('evidence', evidence, 'labels', labels)
-    X_train, X_test, y_train, y_test = train_test_split(
+    evidence_train, evidence_test, label_train, label_test = train_test_split(
         evidence, labels, test_size=TEST_SIZE
     )
 
     # Train model and make predictions
-    model = train_model(X_train, y_train)
-    predictions = model.predict(X_test)
-    sensitivity, specificity = evaluate(y_test, predictions)
+    model = train_model(evidence_train, label_train)
+    predictions = model.predict(evidence_test)
+    sensitivity, specificity = evaluate(label_test, predictions)
 
     # Print results
-    print(f"Correct: {(y_test == predictions).sum()}")
-    print(f"Incorrect: {(y_test != predictions).sum()}")
+    print(f"Correct: {(label_test == predictions).sum()}")
+    print(f"Incorrect: {(label_test != predictions).sum()}")
     print(f"True Positive Rate: {100 * sensitivity:.2f}%")
     print(f"True Negative Rate: {100 * specificity:.2f}%")
 
