@@ -4,12 +4,17 @@ import sys
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 
+# testing some other classifiers (see train_model function)
+# from sklearn.svm import SVC
+# from sklearn.linear_model import Perceptron
+# from sklearn.naive_bayes import GaussianNB
 
 ###
 # Supervised learning exercise
 ###
 
 TEST_SIZE = 0.4
+K_NEAREST_NEIGHBORS = 1
 
 def main():
 
@@ -33,6 +38,7 @@ def main():
     print(f"Incorrect: {(label_test != predictions).sum()}")
     print(f"True Positive Rate: {100 * sensitivity:.2f}%")
     print(f"True Negative Rate: {100 * specificity:.2f}%")
+    # print(f"Accuracy: {100 * (label_test == predictions).sum() / len(predictions):.2f}%")
 
 
 def load_data(filename):
@@ -69,14 +75,10 @@ def load_data(filename):
 
         evidence = []
         labels = []
-        row_num = 1 # todo remove
         for row in reader:
-            if row_num > 10: # todo remove
-                break # todo remove
             evidence.append(get_evidence_values(row[:17]))
             labels.append(1 if row[17] == "TRUE" else 0)
-            row_num += 1 # todo remove
-    
+
         return (evidence, labels)
 
 
@@ -85,7 +87,16 @@ def train_model(evidence, labels):
     Given a list of evidence lists and a list of labels, return a
     fitted k-nearest neighbor model (k=1) trained on the data.
     """
-    raise NotImplementedError
+    model = KNeighborsClassifier(n_neighbors=K_NEAREST_NEIGHBORS) # ~82% accuracy
+
+    # testing some other classifiers (ensure imports are correct)
+    # model = model = Perceptron() # ~88% accuracy
+    # model = SVC() # ~84% accuracy
+    # model = GaussianNB() # ~84% accuracy
+
+    model.fit(evidence, labels)
+
+    return model
 
 
 def evaluate(labels, predictions):
@@ -103,7 +114,26 @@ def evaluate(labels, predictions):
     representing the "true negative rate": the proportion of
     actual negative labels that were accurately identified.
     """
-    raise NotImplementedError
+    total_positive_labels = 0
+    correct_positive_labels = 0
+    total_negative_labels = 0
+    correct_negative_labels = 0
+    for l, p in zip(labels, predictions):
+        if l == 1:
+            total_positive_labels += 1
+            if p == 1:
+                correct_positive_labels += 1
+
+        if l == 0:
+            total_negative_labels += 1
+            if p == 0:
+                correct_negative_labels += 1
+
+    # this could lead to division by 0 (totals could be 0 depending on data)
+    true_positive_rate = 1 / total_positive_labels * correct_positive_labels
+    true_negative_rate = 1 / total_negative_labels * correct_negative_labels
+
+    return (true_positive_rate, true_negative_rate)
 
 
 # helpers
@@ -143,6 +173,7 @@ def get_month_as_number(month):
         'Apr': 3,
         'May': 4,
         'Jun': 5,
+        'June': 5, # unclean data
         'Jul': 6,
         'Aug': 7,
         'Sep': 8,
