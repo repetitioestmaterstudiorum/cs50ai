@@ -1,14 +1,14 @@
 from nim import train, play
 
-training_and_playing_rounds = 50
+training_and_playing_rounds = 30
 
-training_rounds = 2000
+training_rounds = 10000
 playing_rounds = 1000
 
-ai_alpha = 0.4
-ai_epsilon = 0.05
+ai_alpha = 0.01 # alpha sucks
+ai_epsilon = 0.1
 
-ai2_alpha = 0.5
+ai2_alpha = 1
 ai2_epsilon = 0.1
 
 print(f"Training and playing rounds: {training_and_playing_rounds}")
@@ -21,8 +21,8 @@ ai2_won_rounds = 0
 for tapr in range(training_and_playing_rounds):
     print(f"Overall round: {tapr + 1}/{training_and_playing_rounds}")
 
-    ai = train(training_rounds, 0.4, 0.1, 'ai')
-    ai2 = train(training_rounds, 0.3, 0.1, 'ai2')
+    ai = train(training_rounds, ai_alpha, ai_epsilon, 'ai')
+    ai2 = train(training_rounds, ai2_alpha, ai2_epsilon, 'ai2')
 
     ai_won = 0
     ai2_won = 0
