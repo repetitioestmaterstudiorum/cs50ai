@@ -231,13 +231,14 @@ def train(n, alpha, epsilon, player_name):
     return player
 
 
-def play(ai, ai2):
+def play(ai, ai2, who_starts):
     """
     Play AI against AI.
     """
 
-    # choose randomly if ai starts or ai2
-    ai_turn = random.randint(0, 1)
+    # ~~choose randomly if ai starts or ai2~~
+    # who starts changes in every training and playing round
+    ai_turn = who_starts # ~~random.randint(0, 1)~~
 
     # Create new game
     game = Nim()
