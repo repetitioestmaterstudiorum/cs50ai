@@ -58,7 +58,48 @@ def load_data(data_dir):
     be a list of integer labels, representing the categories for each of the
     corresponding `images`.
     """
-    raise NotImplementedError
+    hacking = False # true while developing
+    training = True # true while working on training the model
+
+    cwd = os.getcwd()
+    absolute_data_dir = os.path.join(cwd, data_dir)
+
+    category_names = list() # returned as labels from this function
+    file_paths = set()
+
+    for category in os.scandir(absolute_data_dir):
+        if category.is_dir() and category.name.isdigit(): # ensure entry is a directory and its name a number (not .DS_Store, etc.)
+            for file in os.scandir(category.path):
+                if file.name.endswith('.ppm'): # ensure file ends with .ppm (not .DS_Store, etc.)
+                    category_names.append(category.name)
+                    file_paths.add(file.path)
+
+    hacking and print(f"category_names found: {len(category_names)}, {category_names}")
+    hacking and print(f"file_paths found: {len(file_paths)}")
+
+    max_width = 0
+    max_height = 0
+
+    images = []
+
+    for path in list(file_paths)[:10] if hacking else file_paths:
+        img = cv2.imread(path) # type: numpy.ndarray
+        hacking and print('original dimensions : ', img.shape)
+
+        # capture max width and height to adjust resize dimensions during training the model
+        if img.shape[1] > max_width:
+            max_width = img.shape[1] 
+        if img.shape[0] > max_height:
+            max_height = img.shape[0]
+        
+        img = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT))
+        hacking and print('new dimensions : ', img.shape)
+
+        images.append(img)
+        
+    training and print(f">>>> max_width: {max_width}, max_height: {max_height}\n")
+
+    return (images, category_names)
 
 
 def get_model():
