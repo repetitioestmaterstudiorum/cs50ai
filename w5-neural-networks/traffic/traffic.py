@@ -59,45 +59,54 @@ def load_data(data_dir):
     corresponding `images`.
     """
     hacking = False # true while developing
-    training = True # true while working on training the model
+    training = False # true while working on training the model
+    image_limit = None # any natural number (0, 1, ...) or None
 
     cwd = os.getcwd()
     absolute_data_dir = os.path.join(cwd, data_dir)
 
     category_names = list() # returned as labels from this function
-    file_paths = set()
-
-    for category in os.scandir(absolute_data_dir):
-        if category.is_dir() and category.name.isdigit(): # ensure entry is a directory and its name a number (not .DS_Store, etc.)
-            for file in os.scandir(category.path):
-                if file.name.endswith('.ppm'): # ensure file ends with .ppm (not .DS_Store, etc.)
-                    category_names.append(category.name)
-                    file_paths.add(file.path)
-
-    hacking and print(f"category_names found: {len(category_names)}, {category_names}")
-    hacking and print(f"file_paths found: {len(file_paths)}")
-
+    images = []
+    
+    # capture largest dimensions in the data for parameter optimization
     max_width = 0
     max_height = 0
 
-    images = []
+    # index for development purposes
+    i = 0
 
-    for path in list(file_paths)[:10] if hacking else file_paths:
-        img = cv2.imread(path) # type: numpy.ndarray
-        hacking and print('original dimensions : ', img.shape)
+    for category in os.scandir(absolute_data_dir):
+        # exclude .DS_Store, etc.
+        if not category.is_dir() or not category.name.isdigit():
+            continue
 
-        # capture max width and height to adjust resize dimensions during training the model
-        if img.shape[1] > max_width:
-            max_width = img.shape[1] 
-        if img.shape[0] > max_height:
-            max_height = img.shape[0]
-        
-        img = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT))
-        hacking and print('new dimensions : ', img.shape)
+        for file in os.scandir(category.path):
+            # exclude .DS_Store, etc.
+            if not file.name.endswith('.ppm'): 
+                continue
 
-        images.append(img)
-        
+            img = cv2.imread(file.path) # type: numpy.ndarray
+            img = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT))
+
+            category_names.append(category.name)
+            images.append(img)
+
+            # in training, capture max width and height to adjust resize dimensions during training the model
+            if training:
+                if img.shape[1] > max_width:
+                    max_width = img.shape[1] 
+                if img.shape[0] > max_height:
+                    max_height = img.shape[0]
+            
+            if image_limit:
+                if i > image_limit:
+                    break
+                i += 1
+
     training and print(f">>>> max_width: {max_width}, max_height: {max_height}\n")
+
+    hacking and print(f"category_names found: {len(category_names)}, {set(category_names)}")
+    hacking and print(f"images found: {len(images)}")
 
     return (images, category_names)
 
@@ -108,7 +117,36 @@ def get_model():
     `input_shape` of the first layer is `(IMG_WIDTH, IMG_HEIGHT, 3)`.
     The output layer should have `NUM_CATEGORIES` units, one for each category.
     """
-    raise NotImplementedError
+    model = tf.keras.models.Sequential([
+
+        # change from RGB coefficients to 0-1 values
+        tf.keras.layers.Rescaling(1.0 / 255), # this makes a huge difference!
+
+        # convolutional layer: 32 filters using a 3x3 kernel
+        tf.keras.layers.Conv2D(32, (4, 4), activation="relu", input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)),
+
+        # max-pooling layer with a 2x2 pool size
+        tf.keras.layers.MaxPooling2D(pool_size=(3, 3)),
+        
+        # flatten the units
+        tf.keras.layers.Flatten(),
+
+        # hidden layer and dropout to not overfit
+        tf.keras.layers.Dense(200, activation="sigmoid"),
+        tf.keras.layers.Dropout(0.5),
+
+        # output layer with as many output layers as traffic sign categories
+        tf.keras.layers.Dense(NUM_CATEGORIES, activation="softmax")
+    ])
+
+    # train the nn model
+    model.compile(
+        optimizer="adam",
+        loss="categorical_crossentropy",
+        metrics=["accuracy"]
+    )
+
+    return model
 
 
 if __name__ == "__main__":
