@@ -1,11 +1,13 @@
-import math
 import nltk
 import os
 import sys
 
 
 def main():
-    """Calculate top term frequencies for a corpus of documents."""
+    """
+    Calculate top term frequencies for a corpus of documents.
+    Does not exclude function words (am, by, do, is, which, with, yet, ...)
+    """
 
     if len(sys.argv) != 2:
         sys.exit("Usage: python tfidf.py corpus")

@@ -8,12 +8,12 @@ def main():
     # Read data from files
     if len(sys.argv) != 2:
         sys.exit("Usage: python sentiment.py corpus")
-    positives, negatives = load_data(sys.argv[1])
+    positives, negatives = load_dir_data(sys.argv[1]) # pos/neg are lists of sets
 
     # Create a set of all words
     words = set()
     for document in positives:
-        words.update(document)
+        words.update(document) # each document is a set of words from one line/sentence
     for document in negatives:
         words.update(document)
 
@@ -37,14 +37,14 @@ def extract_words(document):
     )
 
 
-def load_data(directory):
-    result = []
+def load_dir_data(directory):
+    result = [] # this will be a list of lists of sets: [[{}, {}](positive), [{}, {}](negative)]
     for filename in ["positives.txt", "negatives.txt"]:
         with open(os.path.join(directory, filename)) as f:
             result.append([
                 extract_words(line)
                 for line in f.read().splitlines()
-            ])
+            ]) # adds each line as set of words as positive[] or negative[] to result[]
     return result
 
 

@@ -1,3 +1,6 @@
+# import nltk # run once
+# nltk.download('wordnet') # run once
+# nltk.download('omw-1.4') # run once
 from nltk.corpus import wordnet
 
 word = input("Word: ")

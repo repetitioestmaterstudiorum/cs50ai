@@ -1,4 +1,3 @@
-import math
 import nltk
 import os
 import sys
@@ -7,7 +6,7 @@ import sys
 def main():
     """
     Calculate top term frequencies for a corpus of documents.
-    Excludes stop words.
+    Excludes function words (am, by, do, is, which, with, yet, ...) (also called "stop words"?)
     """
 
     if len(sys.argv) != 2:

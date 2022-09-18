@@ -13,10 +13,11 @@ grammar = nltk.CFG.fromstring("""
 
 parser = nltk.ChartParser(grammar)
 
-sentence = input("Sentence: ").split()
+words = input("Sentence: ").split()
 try:
-    for tree in parser.parse(sentence):
+    for tree in parser.parse(words):
         tree.pretty_print()
-        tree.draw()
 except ValueError:
     print("No parse tree possible.")
+
+# e.g. she saw a car

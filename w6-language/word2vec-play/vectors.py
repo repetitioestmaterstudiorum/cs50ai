@@ -1,6 +1,5 @@
 from scipy.spatial.distance import cosine
 
-import math
 import numpy as np
 
 with open("words.txt") as f:
@@ -27,3 +26,7 @@ def closest_words(embedding):
 def closest_word(embedding):
     return closest_words(embedding)[0]
 
+print("distance(words['book'], words['audiobook']):", distance(words['book'], words['audiobook'])) # 0.2902111051633657
+print("distance(words['table'], words['giraffe']):", distance(words['table'], words['giraffe'])) # 0.7642318135027607
+print("closest_words(words['ape'])[:10]:", closest_words(words['ape'])[:10]) # ['ape', 'monkey', 'chimp', 'apes', 'creature', 'beast', 'gorilla', 'chimpanzee', 'lizard', 'pig']
+print("closest_word(words['king'] - words['man'] + words['woman']):", closest_word(words['king'] - words['man'] + words['woman'])) # queen

@@ -1,7 +1,7 @@
 from collections import Counter
 
-import math
 import nltk
+# nltk.download('punkt') # needs one uncommented run
 import os
 import sys
 
@@ -14,7 +14,7 @@ def main():
     print("Loading data...")
 
     n = int(sys.argv[1])
-    corpus = load_data(sys.argv[2])
+    corpus = load_dir_data(sys.argv[2])
 
     # Compute n-grams
     ngrams = Counter(nltk.ngrams(corpus, n))
@@ -24,7 +24,7 @@ def main():
         print(f"{freq}: {ngram}")
 
 
-def load_data(directory):
+def load_dir_data(directory):
     contents = []
 
     # Read all files and extract words
