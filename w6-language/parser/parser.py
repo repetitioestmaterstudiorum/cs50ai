@@ -2,20 +2,27 @@ import nltk
 import sys
 
 TERMINALS = """
-Adj -> "country" | "dreadful" | "enigmatical" | "little" | "moist" | "red"
-Adv -> "down" | "here" | "never"
+Adj -> "red" | "enigmatical" | "country" | "dreadful" | "little" | "moist"
+Adv ->  "here" | "never" | "down"
 Conj -> "and" | "until"
-Det -> "a" | "an" | "his" | "my" | "the"
-N -> "armchair" | "companion" | "day" | "door" | "hand" | "he" | "himself"
-N -> "holmes" | "home" | "i" | "mess" | "paint" | "palm" | "pipe" | "she"
-N -> "smile" | "thursday" | "walk" | "we" | "word"
-P -> "at" | "before" | "in" | "of" | "on" | "to"
-V -> "arrived" | "came" | "chuckled" | "had" | "lit" | "said" | "sat"
-V -> "smiled" | "tell" | "were"
+Det -> "a" | "the" | "my" | "an" | "his"
+N -> "holmes" | "pipe" | "we" | "thursday" | "day" | "armchair" | "he" | "companion" | "smile" | "himself" | "she" | "word" | "door" | "i" | "walk" | "home" | "mess" | "paint" | "palm" | "hand"
+P -> "before" | "in" | "to" | "at" | "on" | "of"
+V -> "sat" | "lit" | "arrived" | "chuckled" | "smiled" | "said" | "were" | "had" | "came"
 """
 
 NONTERMINALS = """
-S -> N V
+S -> NP VP
+S -> NP VP NP
+S -> NP VP PP
+S -> NP VP PP Conj VP
+S -> NP VP Conj VP NP
+S -> NP VP NP PP Conj VP PP
+S -> NP VP NP Conj NP VP PP Adv
+S -> VP NP PP PP
+NP -> N | Det N | Det N P N | Det V N | Det Adj N | Det Adj Adj Adj N
+VP -> V | N V | Adv V | V Adv | V N
+PP -> P N | P NP
 """
 
 grammar = nltk.CFG.fromstring(NONTERMINALS + TERMINALS)
@@ -62,7 +69,8 @@ def preprocess(sentence):
     and removing any word that does not contain at least one alphabetic
     character.
     """
-    raise NotImplementedError
+    # example output: ['holmes', 'lit', 'a', 'pipe']
+    return list(word.lower() for word in nltk.word_tokenize(sentence) if any(c.isalpha() for c in word))
 
 
 def np_chunk(tree):
@@ -72,7 +80,7 @@ def np_chunk(tree):
     whose label is "NP" that does not itself contain any other
     noun phrases as subtrees.
     """
-    raise NotImplementedError
+    return [subtree for subtree in tree.subtrees() if subtree.label() == 'NP']
 
 
 if __name__ == "__main__":
