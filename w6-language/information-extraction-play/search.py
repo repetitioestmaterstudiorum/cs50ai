@@ -7,7 +7,7 @@ import sys
 
 def main():
     if len(sys.argv) != 3:
-        sys.exit("python construct.py data corpus")
+        sys.exit("python search.py data corpus") # python search.py presidents.csv presidents
     examples, corpus = load(sys.argv[1], sys.argv[2])
     templates = find_templates(examples, corpus)
     templates = filter_templates(templates, 2)
