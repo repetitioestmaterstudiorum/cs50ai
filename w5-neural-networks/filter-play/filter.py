@@ -1,6 +1,4 @@
-import math
 import sys
-
 from PIL import Image, ImageFilter
 
 # Ensure correct usage

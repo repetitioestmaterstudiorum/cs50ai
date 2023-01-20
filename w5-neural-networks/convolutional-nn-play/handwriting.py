@@ -16,7 +16,7 @@ x_test = x_test.reshape(
     x_test.shape[0], x_test.shape[1], x_test.shape[2], 1
 )
 
-# Create a convolutional neural network
+# Convolutional neural network
 model = tf.keras.models.Sequential([
 
     # Convolutional layer. Learn 32 filters using a 3x3 kernel
@@ -44,7 +44,7 @@ model.compile(
     loss="categorical_crossentropy",
     metrics=["accuracy"]
 )
-model.fit(x_train, y_train, epochs=10)
+model.fit(x_train, y_train, epochs=4)
 
 # Evaluate neural network performance
 model.evaluate(x_test,  y_test, verbose=2)
