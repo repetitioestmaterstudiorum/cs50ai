@@ -1,7 +1,7 @@
 import csv
 import sys
-
-from util import Node, QueueFrontier
+import argparse
+from util import Node, QueueFrontier, StackFrontier
 
 # Maps names to a set of corresponding person_ids
 names = {}
@@ -53,9 +53,13 @@ def load_data(directory):
 
 
 def main():
-    if len(sys.argv) > 2:
-        sys.exit("Usage: python degrees.py [directory?]")
-    directory = sys.argv[1] if len(sys.argv) == 2 else "large"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", type=str, help="dataset folder to load", choices=["small", "large"], default="small")
+    parser.add_argument("-m", type=str, help="bfs or dfs search method", choices=["bfs", "dfs"], default="bfs")
+    args = parser.parse_args()
+
+    directory = args.d
+    search_method = args.m
 
     # Load data from files into memory
     print("Loading data...")
@@ -69,7 +73,7 @@ def main():
     if target is None:
         sys.exit("Person not found.")
 
-    path = shortest_path(source, target)
+    path = shortest_path(source, target, search_method)
 
     if path is None:
         print("Not connected.")
@@ -84,7 +88,7 @@ def main():
             print(f"{i + 1}: {person1} and {person2} starred in {movie}")
 
 
-def shortest_path(source, target):
+def shortest_path(source, target, search_method):
     """
     Returns the shortest list of (movie_id, person_id) pairs
     that connect the source to the target.
@@ -93,7 +97,12 @@ def shortest_path(source, target):
     """
 
     # initialize the frontier
-    frontier = QueueFrontier()
+    if search_method == "bfs":
+        frontier = QueueFrontier()
+    elif search_method == "dfs":
+        frontier = StackFrontier()
+    else:
+        raise ValueError(f"Search method '{search_method}' not recognized")
 
     # remember explored person_ids
     explored_person_ids = set()
